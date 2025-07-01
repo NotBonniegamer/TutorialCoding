@@ -1,1 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Horror Roboter Spiel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #f0f0f0;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 20px;
+      color: crimson;
+    }
+    .button {
+      padding: 10px 20px;
+      margin: 20px;
+      background-color: crimson;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: darkred;
+    }
+    #gameArea {
+      margin: 20px auto;
+      width: 600px;
+      height: 600px;
+      background-color: #2b2b2b;
+      position: relative;
+      border: 2px solid crimson;
+    }
+    .tile {
+      width: 30px;
+      height: 30px;
+      position: absolute;
+    }
+    .player { background-color: limegreen; }
+    .robot { background-color: crimson; }
+    .exit { background-color: gold; }
+    .wall { background-color: gray; }
+    .controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .control-button {
+      width: 60px;
+      height: 60px;
+      margin: 5px;
+      font-size: 24px;
+      background-color: crimson;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .control-button:active {
+      background-color: darkred;
+    }
+  </style>
+</head>
+<body>
+  <h1>Horror Roboter Spiel</h1>
+  <button class="button" onclick="startGame()">Spiel starten</button>
+  <div id="gameArea"></div>
+  <div class="controls" id="controls" style="display:none;">
+    <div style="width: 100%; text-align: center;">
+      <button class="control-button" onclick="handleMove('ArrowUp')">⬆️</button>
+    </div>
+    <div>
+      <button class="control-button" onclick="handleMove('ArrowLeft')">⬅️</button>
+      <button class="control-button" onclick="handleMove('ArrowDown')">⬇️</button>
+      <button class="control-button" onclick="handleMove('ArrowRight')">➡️</button>
+    </div>
+  </div>
 
+  <script>
+    const tileSize = 30;
+    const map = [
+      "####################",
+      "#P.................#",
+      "#.######.#########.#",
+      "#........#.........#",
+      "#.######.#.#######.#",
+      "#.#....#.#.#.......#",
+      "#.#.##.#.#.#.#####.#",
+      "#.#.##.#.#.#.#...#.#",
+      "#.#....#.#.#.#.#.#.#",
+      "#.######.#.#.#.#.#.#",
+      "#........#.#.#.#.#.#",
+      "##########.#.#.#.#.#",
+      "#..........#.#.#.#.#",
+      "#.##########.#.#.#.#",
+      "#.#..........#.#.#.#",
+      "#.#.##########.#.#.#",
+      "#.#............#.#.#",
+      "#.##############.#.#",
+      "#R...............E.#",
+      "####################"
+    ];
+
+    let playerPos = { x: 0, y: 0 };
+    let robotPos = { x: 0, y: 0 };
+    let exitPos = { x: 0, y: 0 };
+    let walls = [];
+
+    function startGame() {
+      document.getElementById("controls").style.display = "flex";
+      const gameArea = document.getElementById("gameArea");
+      gameArea.innerHTML = "";
+      walls = [];
+
+      for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+          const tile = document.createElement("div");
+          tile.classList.add("tile");
+          tile.style.left = x * tileSize + "px";
+          tile.style.top = y * tileSize + "px";
+
+          const char = map[y][x];
+          if (char === "#") {
+            tile.classList.add("wall");
+            walls.push({ x, y });
+          } else if (char === "P") {
+            tile.classList.add("player");
+            playerPos = { x, y };
+            tile.id = "player";
+          } else if (char === "R") {
+            tile.classList.add("robot");
+            robotPos = { x, y };
+            tile.id = "robot";
+          } else if (char === "E") {
+            tile.classList.add("exit");
+            exitPos = { x, y };
+            tile.id = "exit";
+          }
+          gameArea.appendChild(tile);
+        }
+      }
+
+      document.addEventListener("keydown", (e) => movePlayer(e.key));
+      setInterval(moveRobotSmart, 500);
+    }
+
+    function isWall(x, y) {
+      return walls.some(w => w.x === x && w.y === y);
+    }
+
+    function movePlayer(key) {
+      let dx = 0, dy = 0;
+      if (key === "ArrowUp") dy = -1;
+      if (key === "ArrowDown") dy = 1;
+      if (key === "ArrowLeft") dx = -1;
+      if (key === "ArrowRight") dx = 1;
+
+      const newX = playerPos.x + dx;
+      const newY = playerPos.y + dy;
+
+      if (!isWall(newX, newY) && inBounds(newX, newY)) {
+        playerPos = { x: newX, y: newY };
+        updatePosition("player", playerPos);
+        checkGameState();
+      }
+    }
+
+    function handleMove(direction) {
+      movePlayer(direction);
+    }
+
+    function moveRobotSmart() {
+      const dx = playerPos.x - robotPos.x;
+      const dy = playerPos.y - robotPos.y;
+
+      let moveX = 0, moveY = 0;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        moveX = dx > 0 ? 1 : -1;
+      } else if (dy !== 0) {
+        moveY = dy > 0 ? 1 : -1;
+      }
+
+      const newX = robotPos.x + moveX;
+      const newY = robotPos.y + moveY;
+
+      if (!isWall(newX, newY) && inBounds(newX, newY)) {
+        robotPos = { x: newX, y: newY };
+        updatePosition("robot", robotPos);
+        checkGameState();
+      }
+    }
+
+    function updatePosition(id, pos) {
+      const el = document.getElementById(id);
+      el.style.left = pos.x * tileSize + "px";
+      el.style.top = pos.y * tileSize + "px";
+    }
+
+    function inBounds(x, y) {
+      return x >= 0 && y >= 0 && y < map.length && x < map[0].length;
+    }
+
+    function checkGameState() {
+      if (playerPos.x === robotPos.x && playerPos.y === robotPos.y) {
+        alert("Der Roboter hat dich erwischt! 💀");
+        location.reload();
+      }
+      if (playerPos.x === exitPos.x && playerPos.y === exitPos.y) {
+        alert("Du hast den Ausgang erreicht! 🎉");
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>

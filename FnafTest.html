@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini FNaF Game</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: monospace;
+      text-align: center;
+    }
+    #game {
+      width: 600px;
+      margin: 20px auto;
+      border: 2px solid crimson;
+      padding: 20px;
+      background-color: #111;
+    }
+    .camera-view {
+      width: 100%;
+      height: 300px;
+      background-color: #222;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .controls button {
+      margin: 5px;
+      padding: 10px 20px;
+      background-color: crimson;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background-color: darkred;
+    }
+    .status {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Five Nights im Browser</h1>
+  <div id="game">
+    <div class="camera-view" id="cameraView">Kamera 1</div>
+    <div class="controls">
+      <button onclick="switchCamera(1)">Kamera 1</button>
+      <button onclick="switchCamera(2)">Kamera 2</button>
+      <button onclick="switchCamera(3)">Kamera 3</button>
+    </div>
+    <div class="status">
+      Uhrzeit: <span id="time">12:00</span> Uhr<br>
+      Strom: <span id="power">100</span>%<br>
+      Animatronic Position: <span id="enemyPos">Kamera 1</span>
+    </div>
+  </div>
+
+  <script>
+    let currentCamera = 1;
+    let power = 100;
+    let hour = 0;
+    let enemyPosition = 1;
+
+    function switchCamera(cam) {
+      currentCamera = cam;
+      document.getElementById("cameraView").textContent = "Kamera " + cam;
+      power -= 1;
+      updateUI();
+    }
+
+    function updateUI() {
+      document.getElementById("power").textContent = power;
+      document.getElementById("enemyPos").textContent = "Kamera " + enemyPosition;
+      document.getElementById("time").textContent = (12 + hour) + ":00";
+    }
+
+    function moveEnemy() {
+      if (enemyPosition < 3) {
+        enemyPosition++;
+      } else {
+        // Jumpscare!
+        alert("💀 Der Animatronic hat dich erwischt!");
+        location.reload();
+      }
+      updateUI();
+    }
+
+    function tickHour() {
+      hour++;
+      if (hour >= 6) {
+        alert("🎉 Du hast überlebt bis 6 Uhr!");
+        location.reload();
+      }
+      updateUI();
+    }
+
+    // Spiel-Timer
+    setInterval(() => {
+      moveEnemy();
+    }, 7000); // alle 7 Sekunden bewegt sich der Gegner
+
+    setInterval(() => {
+      tickHour();
+    }, 10000); // jede 10 Sekunden = 1 Stunde
+
+  </script>
+</body>
+</html>
